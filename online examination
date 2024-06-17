@@ -1,0 +1,211 @@
+import java.util.*;
+
+class User {
+    private String username;
+    private String password;
+    private String profile;
+    
+    public User(String username, String password) {
+        this.username = username;
+        this.password = password;
+        this.profile = "Default Profile";
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public boolean checkPassword(String password) {
+        return this.password.equals(password);
+    }
+
+    public void updateProfile(String newProfile) {
+        this.profile = newProfile;
+    }
+
+    public void updatePassword(String newPassword) {
+        this.password = newPassword;
+    }
+
+    public String getProfile() {
+        return profile;
+    }
+}
+
+class Session {
+    private User user;
+    private boolean isActive;
+    private Timer timer;
+    private int duration; 
+    public Session(User user, int duration) {
+        this.user = user;
+        this.isActive = true;
+        this.duration = duration;
+        startTimer();
+    }
+
+    private void startTimer() {
+        timer = new Timer();
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                autoSubmit();
+            }
+        }, duration * 1000);
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public boolean isActive() {
+        return isActive;
+    }
+
+    public void closeSession() {
+        isActive = false;
+        timer.cancel();
+    }
+
+    public void autoSubmit() {
+        if (isActive) {
+            System.out.println("Time's up! Auto-submitting answers...");
+            closeSession();
+        }
+    }
+}
+
+public class QuizApp {
+    private static Map<String, User> users = new HashMap<>();
+    private static Session currentSession;
+
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        int choice;
+
+        do {
+            System.out.println("1. Login");
+            System.out.println("2. Register");
+            System.out.println("3. Exit");
+            System.out.print("Enter choice: ");
+            choice = scanner.nextInt();
+            scanner.nextLine(); 
+
+            switch (choice) {
+                case 1:
+                    login(scanner);
+                    break;
+                case 2:
+                    register(scanner);
+                    break;
+                case 3:
+                    System.out.println("Exiting...");
+                    break;
+                default:
+                    System.out.println("Invalid choice! Please try again.");
+            }
+        } while (choice != 3);
+    }
+
+    private static void login(Scanner scanner) {
+        System.out.print("Username: ");
+        String username = scanner.nextLine();
+        System.out.print("Password: ");
+        String password = scanner.nextLine();
+
+        User user = users.get(username);
+        if (user != null && user.checkPassword(password)) {
+            System.out.println("Login successful!");
+            currentSession = new Session(user, 60); 
+            quizMenu(scanner);
+        } else {
+            System.out.println("Invalid username or password!");
+        }
+    }
+
+    private static void register(Scanner scanner) {
+        System.out.print("Username: ");
+        String username = scanner.nextLine();
+        System.out.print("Password: ");
+        String password = scanner.nextLine();
+
+        if (!users.containsKey(username)) {
+            users.put(username, new User(username, password));
+            System.out.println("Registration successful!");
+        } else {
+            System.out.println("Username already exists!");
+        }
+    }
+
+    private static void quizMenu(Scanner scanner) {
+        if (currentSession != null && currentSession.isActive()) {
+            int choice;
+
+            do {
+                System.out.println("1. Update Profile");
+                System.out.println("2. Update Password");
+                System.out.println("3. Start Quiz");
+                System.out.println("4. Logout");
+                System.out.print("Enter choice: ");
+                choice = scanner.nextInt();
+                scanner.nextLine(); 
+
+                switch (choice) {
+                    case 1:
+                        updateProfile(scanner);
+                        break;
+                    case 2:
+                        updatePassword(scanner);
+                        break;
+                    case 3:
+                        startQuiz(scanner);
+                        break;
+                    case 4:
+                        logout();
+                        break;
+                    default:
+                        System.out.println("Invalid choice! Please try again.");
+                }
+            } while (choice != 4 && currentSession.isActive());
+        }
+    }
+
+    private static void updateProfile(Scanner scanner) {
+        System.out.print("Enter new profile: ");
+        String newProfile = scanner.nextLine();
+        currentSession.getUser().updateProfile(newProfile);
+        System.out.println("Profile updated successfully!");
+    }
+
+    private static void updatePassword(Scanner scanner) {
+        System.out.print("Enter new password: ");
+        String newPassword = scanner.nextLine();
+        currentSession.getUser().updatePassword(newPassword);
+        System.out.println("Password updated successfully!");
+    }
+
+    private static void startQuiz(Scanner scanner) {
+        if (currentSession.isActive()) {
+            System.out.println("Starting quiz...");
+            System.out.println("1. Question 1: (a) (b) (c) (d)");
+            System.out.print("Select answer: ");
+            String answer1 = scanner.nextLine();
+            System.out.println("2. Question 2: (a) (b) (c) (d)");
+            System.out.print("Select answer: ");
+            String answer2 = scanner.nextLine();
+            
+
+            System.out.println("Quiz submitted!");
+            currentSession.closeSession();
+        } else {
+            System.out.println("Session is inactive!");
+        }
+    }
+
+    private static void logout() {
+        if (currentSession != null) {
+            currentSession.closeSession();
+            System.out.println("Logged out successfully!");
+        }
+    }
+}
